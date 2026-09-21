@@ -31,7 +31,8 @@ import { CitizenToastContainer } from './components/citizen/CitizenToastContaine
 import { AuthService } from './services/authService';
 import { trafficStateService } from './services/trafficStateService';
 import { citizenNotificationService } from './services/citizenNotificationService';
-import { UserRole, Junction, RoadSegment, RouteAlternative } from './types/traffic';
+import { routingService } from './services/routingService';
+import { UserRole, Junction, RoadSegment, RouteAlternative, LocationDetails, RouteTrafficSummary } from './types/traffic';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
@@ -50,10 +51,14 @@ export default function App() {
   // Selected Citizen Route (empty until calculated)
   const [selectedRouteId, setSelectedRouteId] = useState<string>('');
 
-  // Explicit Citizen Origin and Destination State (Mandatory - No auto-assign)
-  const [citizenOrigin, setCitizenOrigin] = useState<string>('');
-  const [citizenDestination, setCitizenDestination] = useState<string>('');
+  // Explicit Citizen Origin and Destination State (Real Geocoded Points)
+  const [citizenOrigin, setCitizenOrigin] = useState<LocationDetails | null>(null);
+  const [citizenDestination, setCitizenDestination] = useState<LocationDetails | null>(null);
+  const [clickedLocation, setClickedLocation] = useState<LocationDetails | null>(null);
   const [hasCalculatedRoutes, setHasCalculatedRoutes] = useState<boolean>(false);
+  const [isCalculatingRoutes, setIsCalculatingRoutes] = useState<boolean>(false);
+  const [routingError, setRoutingError] = useState<string | null>(null);
+  const [trafficSummary, setTrafficSummary] = useState<RouteTrafficSummary | null>(null);
 
   // Modals
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -100,17 +105,76 @@ export default function App() {
     }
   };
 
-  const handleFindRoutes = () => {
-    setHasCalculatedRoutes(true);
-    setSelectedRouteId('route-b');
-    citizenNotificationService.evaluateActiveRoute('route-b', (rId) => handleSelectRoute(rId));
+  const handleMapClick = async (lat: number, lng: number) => {
+    try {
+      const loc = await routingService.reverseGeocode(lat, lng);
+      setClickedLocation(loc);
+    } catch {
+      setClickedLocation({
+        name: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        address: `${lat.toFixed(5)}° N, ${lng.toFixed(5)}° E`,
+        latitude: lat,
+        longitude: lng,
+        source: 'Map Coordinate'
+      });
+    }
+  };
+
+  const handleSetClickedAsDestination = () => {
+    if (clickedLocation) {
+      setCitizenDestination(clickedLocation);
+      setClickedLocation(null);
+    }
+  };
+
+  const handleSetClickedAsOrigin = () => {
+    if (clickedLocation) {
+      setCitizenOrigin(clickedLocation);
+      setClickedLocation(null);
+    }
+  };
+
+  const handleFindRoutes = async () => {
+    if (!citizenOrigin || !citizenDestination) {
+      setRoutingError('Please select both a starting location and a destination.');
+      return;
+    }
+
+    setIsCalculatingRoutes(true);
+    setRoutingError(null);
+
+    try {
+      const result = await routingService.calculateRoutes(citizenOrigin, citizenDestination);
+      if (!result.routes || result.routes.length === 0) {
+        throw new Error('No drivable road route found between the selected locations.');
+      }
+
+      setRoutes(result.routes);
+      setSelectedRouteId(result.routes[0].id);
+      setHasCalculatedRoutes(true);
+      setTrafficSummary(result.trafficSummary);
+
+      citizenNotificationService.evaluateActiveRoute(result.routes[0].id, (rId) => {
+        setSelectedRouteId(rId);
+      });
+    } catch (err: any) {
+      console.error('Failed to calculate routes:', err);
+      setRoutingError(err.message || 'Route calculation failed. Please verify your origin and destination.');
+    } finally {
+      setIsCalculatingRoutes(false);
+    }
   };
 
   const handleResetTrip = () => {
-    setCitizenOrigin('');
-    setCitizenDestination('');
+    setCitizenOrigin(null);
+    setCitizenDestination(null);
+    setClickedLocation(null);
     setHasCalculatedRoutes(false);
+    setIsCalculatingRoutes(false);
     setSelectedRouteId('');
+    setRoutingError(null);
+    setTrafficSummary(null);
+    setRoutes(trafficStateService.getRoutes());
   };
 
   const handleLoginSuccess = (role: UserRole) => {
@@ -346,11 +410,18 @@ export default function App() {
                 segments={segments}
                 origin={citizenOrigin}
                 destination={citizenDestination}
-                onOriginChange={setCitizenOrigin}
-                onDestinationChange={setCitizenDestination}
-                hasCalculatedRoutes={hasCalculatedRoutes}
+                clickedLocation={clickedLocation}
+                onSelectOrigin={setCitizenOrigin}
+                onSelectDestination={setCitizenDestination}
+                onMapClick={handleMapClick}
+                onSetClickedAsDestination={handleSetClickedAsDestination}
+                onSetClickedAsOrigin={handleSetClickedAsOrigin}
                 onFindRoutes={handleFindRoutes}
                 onResetTrip={handleResetTrip}
+                hasCalculatedRoutes={hasCalculatedRoutes}
+                isCalculatingRoutes={isCalculatingRoutes}
+                routingError={routingError}
+                trafficSummary={trafficSummary}
                 onOpenVoiceModal={() => setIsVoiceOpen(true)}
                 onOpenChatbot={() => handleNavigate('chat')}
               />
@@ -362,11 +433,12 @@ export default function App() {
                 onSelectRoute={handleSelectRoute}
                 origin={citizenOrigin}
                 destination={citizenDestination}
-                onOriginChange={setCitizenOrigin}
-                onDestinationChange={setCitizenDestination}
+                onSelectOrigin={setCitizenOrigin}
+                onSelectDestination={setCitizenDestination}
                 hasCalculatedRoutes={hasCalculatedRoutes}
                 onFindRoutes={handleFindRoutes}
                 onResetTrip={handleResetTrip}
+                isCalculating={isCalculatingRoutes}
               />
             )}
             {activeView === 'disruptions' && (

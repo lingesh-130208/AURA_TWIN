@@ -14,7 +14,7 @@ import {
   Globe,
   Map as MapIcon
 } from 'lucide-react';
-import { Junction, RoadSegment, TrafficIncident, RouteAlternative, SeverityLevel } from '../types/traffic';
+import { Junction, RoadSegment, TrafficIncident, RouteAlternative, SeverityLevel, LocationDetails } from '../types/traffic';
 import { MapLibreMap } from './MapLibreMap';
 import { GoogleMapsView } from './GoogleMapsView';
 
@@ -29,6 +29,12 @@ interface InteractiveMapProps {
   onSelectJunction?: (junction: Junction) => void;
   selectedSegmentId?: string;
   onSelectSegment?: (segment: RoadSegment) => void;
+  origin?: LocationDetails | null;
+  destination?: LocationDetails | null;
+  clickedLocation?: LocationDetails | null;
+  onMapClick?: (lat: number, lng: number) => void;
+  onSetClickedAsDestination?: () => void;
+  onSetClickedAsOrigin?: () => void;
   showEmergencyCorridor?: boolean;
   showCascadePropagation?: boolean;
   interactiveMode?: 'ADMIN' | 'CITIZEN';
@@ -46,12 +52,18 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   onSelectJunction,
   selectedSegmentId,
   onSelectSegment,
+  origin,
+  destination,
+  clickedLocation,
+  onMapClick,
+  onSetClickedAsDestination,
+  onSetClickedAsOrigin,
   showEmergencyCorridor = false,
   showCascadePropagation = false,
   interactiveMode = 'ADMIN',
   className = 'h-[500px]'
 }) => {
-  // Map engine mode: Schematic Twin vs Google Maps vs MapLibre Geo
+  // Map engine mode: Google Maps by default, with option to inspect MapLibre or Schematic
   const [mapEngine, setMapEngine] = useState<'SCHEMATIC' | 'GOOGLE_MAPS' | 'GEOGRAPHIC'>('GOOGLE_MAPS');
 
   // Map viewport scale and offset
@@ -186,6 +198,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           onSelectJunction={onSelectJunction}
           selectedSegmentId={selectedSegmentId}
           onSelectSegment={onSelectSegment}
+          origin={origin}
+          destination={destination}
+          clickedLocation={clickedLocation}
+          onMapClick={onMapClick}
+          onSetClickedAsDestination={onSetClickedAsDestination}
+          onSetClickedAsOrigin={onSetClickedAsOrigin}
           showEmergencyCorridor={showEmergencyCorridor}
           showCascadePropagation={showCascadePropagation}
           interactiveMode={interactiveMode}
@@ -237,6 +255,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           onSelectJunction={onSelectJunction}
           selectedSegmentId={selectedSegmentId}
           onSelectSegment={onSelectSegment}
+          origin={origin}
+          destination={destination}
+          clickedLocation={clickedLocation}
+          onMapClick={onMapClick}
+          onSetClickedAsDestination={onSetClickedAsDestination}
+          onSetClickedAsOrigin={onSetClickedAsOrigin}
           showEmergencyCorridor={showEmergencyCorridor}
           showCascadePropagation={showCascadePropagation}
           interactiveMode={interactiveMode}

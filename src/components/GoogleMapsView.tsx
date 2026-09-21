@@ -11,14 +11,26 @@ import {
 import {
   AlertTriangle,
   Car,
-  Navigation
+  Navigation,
+  MapPin,
+  Crosshair,
+  Maximize2,
+  Compass,
+  Layers
 } from 'lucide-react';
-import { Junction, RoadSegment, TrafficIncident, RouteAlternative, SeverityLevel } from '../types/traffic';
+import {
+  Junction,
+  RoadSegment,
+  TrafficIncident,
+  RouteAlternative,
+  SeverityLevel,
+  LocationDetails
+} from '../types/traffic';
 
-interface GoogleMapsViewProps {
-  junctions: Junction[];
-  segments: RoadSegment[];
-  incidents: TrafficIncident[];
+export interface GoogleMapsViewProps {
+  junctions?: Junction[];
+  segments?: RoadSegment[];
+  incidents?: TrafficIncident[];
   routes?: RouteAlternative[];
   selectedRouteId?: string;
   onSelectRoute?: (routeId: string) => void;
@@ -26,6 +38,12 @@ interface GoogleMapsViewProps {
   onSelectJunction?: (junction: Junction) => void;
   selectedSegmentId?: string;
   onSelectSegment?: (segment: RoadSegment) => void;
+  origin?: LocationDetails | null;
+  destination?: LocationDetails | null;
+  clickedLocation?: LocationDetails | null;
+  onMapClick?: (lat: number, lng: number) => void;
+  onSetClickedAsDestination?: () => void;
+  onSetClickedAsOrigin?: () => void;
   showEmergencyCorridor?: boolean;
   showCascadePropagation?: boolean;
   interactiveMode?: 'ADMIN' | 'CITIZEN';
@@ -44,7 +62,7 @@ const TAMIL_NADU_REGIONS: Record<string, { name: string; center: { lat: number; 
   vellore: { name: 'Vellore Smart Link', center: { lat: 12.9165, lng: 79.1325 }, zoom: 13 }
 };
 
-// Polyline and Traffic Layer Subcomponent rendered inside <Map>
+// Polyline, Traffic Layer, and Dynamic Viewport Auto-fit Subcomponent
 const GoogleMapsOverlays: React.FC<{
   routes: RouteAlternative[];
   selectedRouteId?: string;
@@ -52,18 +70,31 @@ const GoogleMapsOverlays: React.FC<{
   showTrafficLayer: boolean;
   regionCenter: { lat: number; lng: number };
   regionZoom: number;
-}> = ({ routes, selectedRouteId, onSelectRoute, showTrafficLayer, regionCenter, regionZoom }) => {
+  origin?: LocationDetails | null;
+  destination?: LocationDetails | null;
+}> = ({
+  routes,
+  selectedRouteId,
+  onSelectRoute,
+  showTrafficLayer,
+  regionCenter,
+  regionZoom,
+  origin,
+  destination
+}) => {
   const map = useMap();
   const mapsLib = useMapsLibrary('maps');
   const polylinesRef = useRef<any[]>([]);
   const trafficLayerRef = useRef<any>(null);
 
-  // Sync center and zoom when region selector changes
+  // Sync center and zoom when user chooses region from dropdown
   useEffect(() => {
     if (!map) return;
-    map.setCenter(regionCenter);
-    map.setZoom(regionZoom);
-  }, [map, regionCenter, regionZoom]);
+    if (routes.length === 0 && !origin && !destination) {
+      map.setCenter(regionCenter);
+      map.setZoom(regionZoom);
+    }
+  }, [map, regionCenter, regionZoom, routes.length, origin, destination]);
 
   // Traffic Layer toggle
   useEffect(() => {
@@ -105,12 +136,26 @@ const GoogleMapsOverlays: React.FC<{
           ? '#eab308'
           : '#10b981';
 
+      // Casing polyline for selected route
+      if (isSelected) {
+        const casing = new gmaps.Polyline({
+          path,
+          geodesic: true,
+          strokeColor: '#000000',
+          strokeOpacity: 0.8,
+          strokeWeight: 8,
+          zIndex: 90,
+          map
+        });
+        polylinesRef.current.push(casing);
+      }
+
       const polyline = new gmaps.Polyline({
         path,
         geodesic: true,
-        strokeColor: isSelected ? strokeColor : '#475569',
-        strokeOpacity: isSelected ? 0.95 : 0.45,
-        strokeWeight: isSelected ? 6 : 3.5,
+        strokeColor: isSelected ? strokeColor : '#64748b',
+        strokeOpacity: isSelected ? 0.95 : 0.5,
+        strokeWeight: isSelected ? 5.5 : 3.5,
         zIndex: isSelected ? 100 : 10,
         map
       });
@@ -128,38 +173,84 @@ const GoogleMapsOverlays: React.FC<{
     };
   }, [map, mapsLib, routes, selectedRouteId, onSelectRoute]);
 
+  // Auto-fit bounds when routes, origin, or destination update
+  useEffect(() => {
+    if (!map || typeof window === 'undefined' || !(window as any).google?.maps) return;
+    const gmaps = (window as any).google.maps;
+
+    const bounds = new gmaps.LatLngBounds();
+    let hasPoints = false;
+
+    if (routes.length > 0) {
+      routes.forEach((r) => {
+        r.polylineCoordinates.forEach(([lng, lat]) => {
+          bounds.extend({ lat, lng });
+          hasPoints = true;
+        });
+      });
+    }
+
+    if (origin) {
+      bounds.extend({ lat: origin.latitude, lng: origin.longitude });
+      hasPoints = true;
+    }
+
+    if (destination) {
+      bounds.extend({ lat: destination.latitude, lng: destination.longitude });
+      hasPoints = true;
+    }
+
+    if (hasPoints) {
+      try {
+        map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 });
+      } catch {
+        // Fallback
+      }
+    }
+  }, [map, routes, origin, destination]);
+
   return null;
 };
 
 export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
-  junctions,
-  segments: _segments,
-  incidents,
+  junctions = [],
+  segments: _segments = [],
+  incidents = [],
   routes = [],
   selectedRouteId,
   onSelectRoute,
   selectedJunctionCode,
   onSelectJunction,
-  interactiveMode: _interactiveMode = 'ADMIN',
+  origin,
+  destination,
+  clickedLocation,
+  onMapClick,
+  onSetClickedAsDestination,
+  onSetClickedAsOrigin,
+  interactiveMode = 'ADMIN',
   className = 'h-[500px]'
 }) => {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyDOmpr3pzo4POPJsndFmDjhs6WSb8WO4hA';
 
   const [selectedRegion, setSelectedRegion] = useState('chennai');
   const [showTrafficLayer, setShowTrafficLayer] = useState(true);
+  const [mapType, setMapType] = useState<'roadmap' | 'satellite' | 'hybrid' | 'terrain'>('roadmap');
   const [activeJunctionInfo, setActiveJunctionInfo] = useState<Junction | null>(null);
   const [activeIncidentInfo, setActiveIncidentInfo] = useState<TrafficIncident | null>(null);
+  const [activeSpecialMarker, setActiveSpecialMarker] = useState<'origin' | 'destination' | 'clicked' | null>(null);
 
   const region = TAMIL_NADU_REGIONS[selectedRegion] || TAMIL_NADU_REGIONS.chennai;
 
   const handleJunctionMarkerClick = (j: Junction) => {
     setActiveIncidentInfo(null);
+    setActiveSpecialMarker(null);
     setActiveJunctionInfo(j);
     onSelectJunction?.(j);
   };
 
   const handleIncidentMarkerClick = (inc: TrafficIncident) => {
     setActiveJunctionInfo(null);
+    setActiveSpecialMarker(null);
     setActiveIncidentInfo(inc);
   };
 
@@ -175,51 +266,84 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
 
   return (
     <div className={`relative w-full overflow-hidden bg-neutral-950 rounded-xl border border-neutral-800 select-none ${className}`}>
-      {/* Top Floating Controls */}
-      <div className="absolute top-3 left-3 z-20 flex items-center space-x-2">
-        {/* Region Selector */}
-        <select
-          id="google-maps-region-select"
-          value={selectedRegion}
-          onChange={(e) => setSelectedRegion(e.target.value)}
-          className="text-xs font-mono bg-neutral-900/90 backdrop-blur border border-neutral-700 rounded-lg px-2.5 py-1.5 text-neutral-200 focus:outline-none focus:border-cyan-500 shadow-lg cursor-pointer"
-        >
-          {Object.entries(TAMIL_NADU_REGIONS).map(([key, item]) => (
-            <option key={key} value={key} className="bg-neutral-900 text-neutral-100">
-              {item.name}
-            </option>
-          ))}
-        </select>
+      {/* Top Floating Controls Bar */}
+      <div className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        <div className="flex items-center space-x-2 pointer-events-auto">
+          {/* Region Quick Navigation */}
+          <select
+            id="google-maps-region-select"
+            value={selectedRegion}
+            onChange={(e) => setSelectedRegion(e.target.value)}
+            className="text-xs font-mono bg-neutral-900/95 backdrop-blur border border-neutral-700 rounded-lg px-2.5 py-1.5 text-neutral-200 focus:outline-none focus:border-cyan-500 shadow-xl cursor-pointer"
+          >
+            {Object.entries(TAMIL_NADU_REGIONS).map(([key, item]) => (
+              <option key={key} value={key} className="bg-neutral-900 text-neutral-100">
+                {item.name}
+              </option>
+            ))}
+          </select>
 
-        {/* Live Traffic Overlay Toggle */}
-        <button
-          type="button"
-          onClick={() => setShowTrafficLayer(!showTrafficLayer)}
-          className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium border shadow-lg transition-colors backdrop-blur ${
-            showTrafficLayer
-              ? 'bg-emerald-950/80 border-emerald-600 text-emerald-300'
-              : 'bg-neutral-900/80 border-neutral-700 text-neutral-400 hover:text-neutral-200'
-          }`}
-          title="Toggle Google Maps Live Traffic Layer"
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Traffic Layer {showTrafficLayer ? 'ON' : 'OFF'}</span>
-        </button>
+          {/* Live Traffic Overlay Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowTrafficLayer(!showTrafficLayer)}
+            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium border shadow-xl transition-colors backdrop-blur cursor-pointer ${
+              showTrafficLayer
+                ? 'bg-emerald-950/90 border-emerald-600 text-emerald-300'
+                : 'bg-neutral-900/90 border-neutral-700 text-neutral-400 hover:text-neutral-200'
+            }`}
+            title="Toggle Google Maps Live Traffic Layer"
+          >
+            <Car className="w-3.5 h-3.5" />
+            <span>Traffic {showTrafficLayer ? 'ON' : 'OFF'}</span>
+          </button>
+
+          {/* Map Type (Roadmap / Satellite) */}
+          <button
+            type="button"
+            onClick={() => setMapType(mapType === 'roadmap' ? 'hybrid' : 'roadmap')}
+            className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono border shadow-xl transition-colors backdrop-blur cursor-pointer ${
+              mapType === 'hybrid'
+                ? 'bg-cyan-950/90 border-cyan-500 text-cyan-300'
+                : 'bg-neutral-900/90 border-neutral-700 text-neutral-300 hover:text-white'
+            }`}
+            title="Toggle Satellite / Hybrid View"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{mapType === 'hybrid' ? 'Satellite' : 'Roadmap'}</span>
+          </button>
+        </div>
+
+        {/* Status Indicator */}
+        <div className="hidden sm:flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-neutral-900/90 backdrop-blur border border-neutral-700 text-[11px] font-mono text-cyan-400 shadow-xl pointer-events-auto">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Google Maps Live Platform</span>
+        </div>
       </div>
 
       {/* Google Maps Container via @vis.gl/react-google-maps */}
       <div className="w-full h-full">
-        <APIProvider apiKey={apiKey} libraries={['marker', 'maps']}>
+        <APIProvider apiKey={apiKey} libraries={['marker', 'maps', 'places']}>
           <Map
             mapId="DEMO_MAP_ID"
             defaultCenter={region.center}
             defaultZoom={region.zoom}
+            mapTypeId={mapType}
             gestureHandling="greedy"
             disableDefaultUI={false}
             internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
             className="w-full h-full"
+            onClick={(e) => {
+              if (!e.detail?.latLng) return;
+              const lat = typeof e.detail.latLng.lat === 'function' ? e.detail.latLng.lat() : e.detail.latLng.lat;
+              const lng = typeof e.detail.latLng.lng === 'function' ? e.detail.latLng.lng() : e.detail.latLng.lng;
+              if (typeof lat === 'number' && typeof lng === 'number') {
+                setActiveSpecialMarker('clicked');
+                onMapClick?.(lat, lng);
+              }
+            }}
           >
-            {/* Custom Overlay Logic: Polylines, TrafficLayer, & Bounds */}
+            {/* Custom Overlay Logic: Polylines, TrafficLayer, & Auto-fit Bounds */}
             <GoogleMapsOverlays
               routes={routes}
               selectedRouteId={selectedRouteId}
@@ -227,7 +351,149 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
               showTrafficLayer={showTrafficLayer}
               regionCenter={region.center}
               regionZoom={region.zoom}
+              origin={origin}
+              destination={destination}
             />
+
+            {/* Origin Marker */}
+            {origin && (
+              <AdvancedMarker
+                position={{ lat: origin.latitude, lng: origin.longitude }}
+                title={`Origin: ${origin.name}`}
+                onClick={() => {
+                  setActiveJunctionInfo(null);
+                  setActiveIncidentInfo(null);
+                  setActiveSpecialMarker('origin');
+                }}
+                zIndex={70}
+              >
+                <Pin background="#10b981" borderColor="#047857" glyphColor="#ffffff" scale={1.2}>
+                  <Navigation className="w-3.5 h-3.5 text-white" />
+                </Pin>
+              </AdvancedMarker>
+            )}
+
+            {/* Destination Marker */}
+            {destination && (
+              <AdvancedMarker
+                position={{ lat: destination.latitude, lng: destination.longitude }}
+                title={`Destination: ${destination.name}`}
+                onClick={() => {
+                  setActiveJunctionInfo(null);
+                  setActiveIncidentInfo(null);
+                  setActiveSpecialMarker('destination');
+                }}
+                zIndex={75}
+              >
+                <Pin background="#f43f5e" borderColor="#9f1239" glyphColor="#ffffff" scale={1.25}>
+                  <MapPin className="w-3.5 h-3.5 text-white" />
+                </Pin>
+              </AdvancedMarker>
+            )}
+
+            {/* Clicked Location Marker */}
+            {clickedLocation && (
+              <AdvancedMarker
+                position={{ lat: clickedLocation.latitude, lng: clickedLocation.longitude }}
+                title={clickedLocation.name}
+                onClick={() => {
+                  setActiveJunctionInfo(null);
+                  setActiveIncidentInfo(null);
+                  setActiveSpecialMarker('clicked');
+                }}
+                zIndex={80}
+              >
+                <div className="flex items-center justify-center p-2 rounded-full bg-amber-500 text-neutral-950 font-bold shadow-2xl ring-4 ring-amber-400/50 animate-bounce">
+                  <Crosshair className="w-4 h-4" />
+                </div>
+              </AdvancedMarker>
+            )}
+
+            {/* Origin InfoWindow */}
+            {activeSpecialMarker === 'origin' && origin && (
+              <InfoWindow
+                position={{ lat: origin.latitude, lng: origin.longitude }}
+                onCloseClick={() => setActiveSpecialMarker(null)}
+                pixelOffset={[0, -36]}
+              >
+                <div className="p-2 text-neutral-900 font-sans text-xs max-w-xs space-y-1">
+                  <div className="flex items-center space-x-1 text-emerald-700 font-bold border-b pb-1">
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>Trip Origin</span>
+                  </div>
+                  <div className="font-bold text-neutral-900">{origin.name}</div>
+                  <div className="text-[11px] text-neutral-600">{origin.address}</div>
+                  <div className="text-[10px] text-neutral-400 font-mono">
+                    {origin.latitude.toFixed(5)}° N, {origin.longitude.toFixed(5)}° E
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
+
+            {/* Destination InfoWindow */}
+            {activeSpecialMarker === 'destination' && destination && (
+              <InfoWindow
+                position={{ lat: destination.latitude, lng: destination.longitude }}
+                onCloseClick={() => setActiveSpecialMarker(null)}
+                pixelOffset={[0, -36]}
+              >
+                <div className="p-2 text-neutral-900 font-sans text-xs max-w-xs space-y-1">
+                  <div className="flex items-center space-x-1 text-rose-700 font-bold border-b pb-1">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Selected Destination</span>
+                  </div>
+                  <div className="font-bold text-neutral-900">{destination.name}</div>
+                  <div className="text-[11px] text-neutral-600">{destination.address}</div>
+                  <div className="text-[10px] text-neutral-400 font-mono">
+                    {destination.latitude.toFixed(5)}° N, {destination.longitude.toFixed(5)}° E
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
+
+            {/* Clicked Location Quick Action InfoWindow */}
+            {activeSpecialMarker === 'clicked' && clickedLocation && (
+              <InfoWindow
+                position={{ lat: clickedLocation.latitude, lng: clickedLocation.longitude }}
+                onCloseClick={() => setActiveSpecialMarker(null)}
+                pixelOffset={[0, -30]}
+              >
+                <div className="p-2 text-neutral-900 font-sans text-xs max-w-xs space-y-2">
+                  <div className="flex items-center space-x-1 text-amber-700 font-bold border-b pb-1">
+                    <Crosshair className="w-3.5 h-3.5" />
+                    <span>Clicked Location</span>
+                  </div>
+                  <div className="font-semibold text-neutral-800">{clickedLocation.name}</div>
+                  <div className="text-[11px] text-neutral-600">{clickedLocation.address}</div>
+                  <div className="flex items-center space-x-2 pt-1 border-t">
+                    {onSetClickedAsDestination && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSetClickedAsDestination();
+                          setActiveSpecialMarker(null);
+                        }}
+                        className="px-2 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-mono text-[10px] font-bold cursor-pointer"
+                      >
+                        Set Destination
+                      </button>
+                    )}
+                    {onSetClickedAsOrigin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSetClickedAsOrigin();
+                          setActiveSpecialMarker(null);
+                        }}
+                        className="px-2 py-1 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-[10px] font-bold cursor-pointer"
+                      >
+                        Set Origin
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </InfoWindow>
+            )}
 
             {/* Junctions Advanced Markers */}
             {junctions.map((j) => {
@@ -371,7 +637,7 @@ export const GoogleMapsView: React.FC<GoogleMapsViewProps> = ({
           <span>Critical Spillback</span>
         </div>
         <span className="text-neutral-500">|</span>
-        <span className="text-cyan-400">Powered by Google Maps Platform</span>
+        <span className="text-cyan-400">Google Maps Platform</span>
       </div>
     </div>
   );

@@ -1,5 +1,31 @@
 export type UserRole = 'ADMIN' | 'USER';
 
+export interface LocationDetails {
+  name: string;
+  address: string;
+  city?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+  latitude: number;
+  longitude: number;
+  placeId?: string;
+  source: string;
+  selectedTime?: string;
+}
+
+export interface RouteTrafficSummary {
+  status: 'REAL' | 'ESTIMATED' | 'PREDICTED' | 'UNAVAILABLE';
+  condition: 'FREE_FLOW' | 'MODERATE' | 'CONGESTED' | 'SEVERE_GRIDLOCK';
+  averageSpeedKmh: number;
+  delayMinutes: number;
+  futureRiskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'UNAVAILABLE';
+  riskWindow: string;
+  potentialDisruption: string;
+  cascadeExposure: string;
+  downstreamJunctionsCount: number;
+}
+
 export interface User {
   id: string;
   username: string;
