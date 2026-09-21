@@ -1,0 +1,6 @@
+{
+  "name": "AURA-TWIN",
+  "description": "Real-Time AI Decision Intelligence Platform for Preventing Traffic Gridlock featuring AURA Command and AURA Citizen.",
+  "requestFramePermissions": ["geolocation", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
