@@ -10,9 +10,13 @@ import {
   Eye,
   EyeOff,
   Navigation,
-  Info
+  Info,
+  Globe,
+  Map as MapIcon
 } from 'lucide-react';
 import { Junction, RoadSegment, TrafficIncident, RouteAlternative, SeverityLevel } from '../types/traffic';
+import { MapLibreMap } from './MapLibreMap';
+import { GoogleMapsView } from './GoogleMapsView';
 
 interface InteractiveMapProps {
   junctions: Junction[];
@@ -47,6 +51,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   interactiveMode = 'ADMIN',
   className = 'h-[500px]'
 }) => {
+  // Map engine mode: Schematic Twin vs Google Maps vs MapLibre Geo
+  const [mapEngine, setMapEngine] = useState<'SCHEMATIC' | 'GOOGLE_MAPS' | 'GEOGRAPHIC'>('GOOGLE_MAPS');
+
   // Map viewport scale and offset
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -137,6 +144,108 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
   };
 
+  if (mapEngine === 'GOOGLE_MAPS') {
+    return (
+      <div className={`relative w-full ${className}`}>
+        {/* Toggle Pill at Top Center */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center bg-neutral-900/95 backdrop-blur border border-neutral-700 rounded-lg p-1 shadow-xl">
+          <button
+            type="button"
+            onClick={() => setMapEngine('SCHEMATIC')}
+            className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+            <span>Digital Twin</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapEngine('GOOGLE_MAPS')}
+            className="px-2.5 py-1 text-xs font-mono rounded bg-cyan-600 text-white font-semibold shadow-sm transition-colors flex items-center space-x-1"
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Google Maps</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapEngine('GEOGRAPHIC')}
+            className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>MapLibre</span>
+          </button>
+        </div>
+
+        <GoogleMapsView
+          junctions={junctions}
+          segments={segments}
+          incidents={incidents}
+          routes={routes}
+          selectedRouteId={selectedRouteId}
+          onSelectRoute={onSelectRoute}
+          selectedJunctionCode={selectedJunctionCode}
+          onSelectJunction={onSelectJunction}
+          selectedSegmentId={selectedSegmentId}
+          onSelectSegment={onSelectSegment}
+          showEmergencyCorridor={showEmergencyCorridor}
+          showCascadePropagation={showCascadePropagation}
+          interactiveMode={interactiveMode}
+          className={className}
+        />
+      </div>
+    );
+  }
+
+  if (mapEngine === 'GEOGRAPHIC') {
+    return (
+      <div className={`relative w-full ${className}`}>
+        {/* Toggle Pill at Top Center */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 flex items-center bg-neutral-900/95 backdrop-blur border border-neutral-700 rounded-lg p-1 shadow-xl">
+          <button
+            type="button"
+            onClick={() => setMapEngine('SCHEMATIC')}
+            className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+            <span>Digital Twin</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapEngine('GOOGLE_MAPS')}
+            className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Google Maps</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMapEngine('GEOGRAPHIC')}
+            className="px-2.5 py-1 text-xs font-mono rounded bg-cyan-600 text-white font-semibold shadow-sm transition-colors flex items-center space-x-1"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>MapLibre</span>
+          </button>
+        </div>
+
+        <MapLibreMap
+          junctions={junctions}
+          segments={segments}
+          incidents={incidents}
+          routes={routes}
+          selectedRouteId={selectedRouteId}
+          onSelectRoute={onSelectRoute}
+          selectedJunctionCode={selectedJunctionCode}
+          onSelectJunction={onSelectJunction}
+          selectedSegmentId={selectedSegmentId}
+          onSelectSegment={onSelectSegment}
+          showEmergencyCorridor={showEmergencyCorridor}
+          showCascadePropagation={showCascadePropagation}
+          interactiveMode={interactiveMode}
+          className={className}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`relative w-full overflow-hidden bg-[#0a0f18] rounded-xl border border-neutral-800 select-none ${className}`}>
       {/* Search Bar on Map */}
@@ -160,6 +269,34 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </button>
           )}
         </form>
+      </div>
+
+      {/* Map Engine Toggle Pill */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 hidden sm:flex items-center bg-neutral-900/95 backdrop-blur border border-neutral-700 rounded-lg p-1 shadow-lg">
+        <button
+          type="button"
+          onClick={() => setMapEngine('SCHEMATIC')}
+          className="px-2.5 py-1 text-xs font-mono rounded bg-cyan-600 text-white font-semibold shadow-sm transition-colors flex items-center space-x-1"
+        >
+          <MapIcon className="w-3.5 h-3.5" />
+          <span>Digital Twin</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMapEngine('GOOGLE_MAPS')}
+          className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+        >
+          <Navigation className="w-3.5 h-3.5" />
+          <span>Google Maps</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMapEngine('GEOGRAPHIC')}
+          className="px-2.5 py-1 text-xs font-mono rounded text-neutral-300 hover:text-white transition-colors flex items-center space-x-1"
+        >
+          <Globe className="w-3.5 h-3.5" />
+          <span>MapLibre</span>
+        </button>
       </div>
 
       {/* Layer Toggles & Map Controls */}

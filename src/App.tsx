@@ -25,10 +25,12 @@ import { CitizenRoutes } from './components/citizen/CitizenRoutes';
 import { CitizenDisruptions } from './components/citizen/CitizenDisruptions';
 import { CitizenChatbot } from './components/citizen/CitizenChatbot';
 import { CitizenLiveVoiceModal } from './components/citizen/CitizenLiveVoiceModal';
+import { CitizenToastContainer } from './components/citizen/CitizenToastContainer';
 
 // Services & Types
 import { AuthService } from './services/authService';
 import { trafficStateService } from './services/trafficStateService';
+import { citizenNotificationService } from './services/citizenNotificationService';
 import { UserRole, Junction, RoadSegment, RouteAlternative } from './types/traffic';
 
 export default function App() {
@@ -57,6 +59,15 @@ export default function App() {
   const [segments, setSegments] = useState(trafficStateService.getSegments());
   const [incidents, setIncidents] = useState(trafficStateService.getIncidents());
   const [routes, setRoutes] = useState(trafficStateService.getRoutes());
+
+  // Google Maps Platform Quota Banner State
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
+
+  useEffect(() => {
+    const handleQuota = () => setIsQuotaExceeded(true);
+    window.addEventListener('gmp-quota-exceeded', handleQuota);
+    return () => window.removeEventListener('gmp-quota-exceeded', handleQuota);
+  }, []);
 
   // Listen to state changes
   useEffect(() => {
@@ -104,6 +115,17 @@ export default function App() {
       setIsUnauthorized(false);
     }
   };
+
+  const handleSelectRoute = (routeId: string) => {
+    setSelectedRouteId(routeId);
+    citizenNotificationService.evaluateActiveRoute(routeId, (rId) => handleSelectRoute(rId));
+  };
+
+  useEffect(() => {
+    if (currentUser?.role !== 'ADMIN' && !isLanding) {
+      citizenNotificationService.evaluateActiveRoute(selectedRouteId, (rId) => handleSelectRoute(rId));
+    }
+  }, [selectedRouteId, currentUser?.role, isLanding]);
 
   const handleNavigate = (view: string) => {
     // Authorization check
@@ -173,6 +195,24 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-cyan-500/30">
+      {/* Google Maps Quota Warning Banner (Section 8) */}
+      {isQuotaExceeded && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm">
+          <span>
+            Google Maps Platform quota reached. If you are the app owner, visit{' '}
+            <a
+              href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold text-amber-950 hover:text-amber-800"
+            >
+              maps developer site
+            </a>{' '}
+            for instructions to update your account.
+          </span>
+        </div>
+      )}
+
       {/* Top Application Header */}
       <Header
         activeRole={currentUser?.role || 'USER'}
@@ -264,11 +304,12 @@ export default function App() {
           </>
         ) : (
           <>
+            <CitizenToastContainer />
             {activeView === 'map' && (
               <CitizenMap
                 routes={routes}
                 selectedRouteId={selectedRouteId}
-                onSelectRoute={setSelectedRouteId}
+                onSelectRoute={handleSelectRoute}
                 junctions={junctions}
                 segments={segments}
                 onOpenVoiceModal={() => setIsVoiceOpen(true)}
@@ -279,13 +320,13 @@ export default function App() {
               <CitizenRoutes
                 routes={routes}
                 selectedRouteId={selectedRouteId}
-                onSelectRoute={setSelectedRouteId}
+                onSelectRoute={handleSelectRoute}
               />
             )}
             {activeView === 'disruptions' && (
               <CitizenDisruptions
                 onSelectRouteB={() => {
-                  setSelectedRouteId('route-b');
+                  handleSelectRoute('route-b');
                   handleNavigate('map');
                 }}
               />

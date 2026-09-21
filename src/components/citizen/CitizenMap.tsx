@@ -16,6 +16,8 @@ import {
 import { RouteAlternative, Junction, RoadSegment } from '../../types/traffic';
 import { InteractiveMap } from '../InteractiveMap';
 import { GeminiService } from '../../services/geminiService';
+import { CitizenDisruptionSimulator } from './CitizenDisruptionSimulator';
+import { citizenNotificationService } from '../../services/citizenNotificationService';
 
 interface CitizenMapProps {
   routes: RouteAlternative[];
@@ -80,6 +82,16 @@ export const CitizenMap: React.FC<CitizenMapProps> = ({
             <p className="text-xs text-neutral-300 mt-0.5 max-w-2xl">
               Commuters currently taking <strong>Route A (Grand Trunk Spine)</strong> will experience delay increasing from <strong>+2 min to +10 min</strong>. We recommend switching to <strong>Route B (Eastern Bypass)</strong>.
             </p>
+            {selectedRouteId === 'route-a' && (
+              <button
+                type="button"
+                onClick={() => onSelectRoute('route-b')}
+                className="mt-2 inline-flex items-center space-x-1.5 px-3 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition-colors"
+              >
+                <span>Switch to Route B (Eastern Bypass)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -105,6 +117,13 @@ export const CitizenMap: React.FC<CitizenMapProps> = ({
           )}
         </div>
       </div>
+
+      {/* Citizen Disruption Notification Simulator */}
+      <CitizenDisruptionSimulator
+        selectedRouteId={selectedRouteId}
+        routes={routes}
+        onSelectRoute={onSelectRoute}
+      />
 
       {/* Main Map and Route Selection Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

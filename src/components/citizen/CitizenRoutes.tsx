@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigation, Clock, ShieldCheck, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { RouteAlternative } from '../../types/traffic';
+import { CitizenDisruptionSimulator } from './CitizenDisruptionSimulator';
 
 interface CitizenRoutesProps {
   routes: RouteAlternative[];
@@ -34,6 +35,13 @@ export const CitizenRoutes: React.FC<CitizenRoutesProps> = ({
           </p>
         </div>
       </div>
+
+      {/* Disruption Radar & Test Tool */}
+      <CitizenDisruptionSimulator
+        selectedRouteId={selectedRouteId}
+        routes={routes}
+        onSelectRoute={onSelectRoute}
+      />
 
       {/* Routes Comparison Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
