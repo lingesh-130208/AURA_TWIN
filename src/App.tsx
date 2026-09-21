@@ -47,8 +47,13 @@ export default function App() {
   const [selectedJunction, setSelectedJunction] = useState<Junction | null>(null);
   const [selectedSegment, setSelectedSegment] = useState<RoadSegment | null>(null);
 
-  // Selected Citizen Route
-  const [selectedRouteId, setSelectedRouteId] = useState<string>('route-b');
+  // Selected Citizen Route (empty until calculated)
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('');
+
+  // Explicit Citizen Origin and Destination State (Mandatory - No auto-assign)
+  const [citizenOrigin, setCitizenOrigin] = useState<string>('');
+  const [citizenDestination, setCitizenDestination] = useState<string>('');
+  const [hasCalculatedRoutes, setHasCalculatedRoutes] = useState<boolean>(false);
 
   // Modals
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -81,9 +86,31 @@ export default function App() {
   }, []);
 
   const handleRoleSelectFromLanding = (role: UserRole) => {
-    setLoginRoleTarget(role);
-    setIsLanding(false);
-    setIsLoginOpen(true);
+    if (role === 'USER') {
+      // Direct access for citizen
+      AuthService.login('citizen', 'user123', 'USER');
+      setCurrentUser(AuthService.getCurrentUser());
+      setIsLanding(false);
+      setIsUnauthorized(false);
+      setActiveView('map');
+    } else {
+      setLoginRoleTarget(role);
+      setIsLanding(false);
+      setIsLoginOpen(true);
+    }
+  };
+
+  const handleFindRoutes = () => {
+    setHasCalculatedRoutes(true);
+    setSelectedRouteId('route-b');
+    citizenNotificationService.evaluateActiveRoute('route-b', (rId) => handleSelectRoute(rId));
+  };
+
+  const handleResetTrip = () => {
+    setCitizenOrigin('');
+    setCitizenDestination('');
+    setHasCalculatedRoutes(false);
+    setSelectedRouteId('');
   };
 
   const handleLoginSuccess = (role: UserRole) => {
@@ -122,12 +149,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (currentUser?.role !== 'ADMIN' && !isLanding) {
+    if (currentUser?.role !== 'ADMIN' && !isLanding && selectedRouteId) {
       citizenNotificationService.evaluateActiveRoute(selectedRouteId, (rId) => handleSelectRoute(rId));
     }
   }, [selectedRouteId, currentUser?.role, isLanding]);
 
   const handleNavigate = (view: string) => {
+    if (view === 'landing') {
+      setIsLanding(true);
+      return;
+    }
+
     // Authorization check
     const adminViews = ['overview', 'what-if', 'cascade', 'timeline', 'risk-map', 'incidents', 'emergency', 'replay', 'monitoring', 'system-health', 'audit'];
     if (adminViews.includes(view) && currentUser?.role !== 'ADMIN') {
@@ -312,6 +344,13 @@ export default function App() {
                 onSelectRoute={handleSelectRoute}
                 junctions={junctions}
                 segments={segments}
+                origin={citizenOrigin}
+                destination={citizenDestination}
+                onOriginChange={setCitizenOrigin}
+                onDestinationChange={setCitizenDestination}
+                hasCalculatedRoutes={hasCalculatedRoutes}
+                onFindRoutes={handleFindRoutes}
+                onResetTrip={handleResetTrip}
                 onOpenVoiceModal={() => setIsVoiceOpen(true)}
                 onOpenChatbot={() => handleNavigate('chat')}
               />
@@ -321,6 +360,13 @@ export default function App() {
                 routes={routes}
                 selectedRouteId={selectedRouteId}
                 onSelectRoute={handleSelectRoute}
+                origin={citizenOrigin}
+                destination={citizenDestination}
+                onOriginChange={setCitizenOrigin}
+                onDestinationChange={setCitizenDestination}
+                hasCalculatedRoutes={hasCalculatedRoutes}
+                onFindRoutes={handleFindRoutes}
+                onResetTrip={handleResetTrip}
               />
             )}
             {activeView === 'disruptions' && (

@@ -203,8 +203,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand & Identity */}
         <div className="flex items-center space-x-3">
           <button
-            onClick={() => onNavigate(isAdmin ? 'overview' : 'map')}
-            className="flex items-center space-x-2 text-left group"
+            onClick={() => onNavigate('landing')}
+            className="flex items-center space-x-2 text-left group cursor-pointer"
+            title="Return to AURA-TWIN Portal (Switch between Command and Citizen)"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-cyan-900/30">
               <Compass className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300" />

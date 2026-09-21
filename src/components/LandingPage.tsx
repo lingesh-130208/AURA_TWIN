@@ -11,7 +11,11 @@ import {
   Clock,
   Layers,
   Database,
-  Cpu
+  Cpu,
+  Radio,
+  MapPin,
+  Lock,
+  UserCheck
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -28,238 +32,243 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onQuickLogin
 }) => {
   const handleSelectRole = (role: 'ADMIN' | 'USER') => {
-    if (onSelectRole) onSelectRole(role);
-    else if (onSelectRoleLogin) onSelectRoleLogin(role);
+    if (onQuickLogin) {
+      onQuickLogin(role);
+    } else if (onSelectRole) {
+      onSelectRole(role);
+    } else if (onSelectRoleLogin) {
+      onSelectRoleLogin(role);
+    }
   };
-  return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-neutral-950">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
 
-        <div className="text-center space-y-5 relative z-10 max-w-4xl mx-auto">
-          {/* Eyebrow badge */}
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/60 text-cyan-300 text-xs font-mono font-semibold">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>AURA-TWIN MOBILITY PLATFORM // RESEARCH & DEPLOYMENT</span>
+  return (
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-neutral-950 relative overflow-hidden">
+      {/* Background glow accents */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-900/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-rose-900/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Top Application Bar */}
+      <header className="px-6 py-4 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur flex items-center justify-between z-10">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-mono text-base font-bold shadow-md shadow-cyan-950">
+            Ω
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-extrabold text-base tracking-tight text-white font-mono">AURA-TWIN</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-800 text-cyan-300 font-bold">
+                PLATFORM GATEWAY
+              </span>
+            </div>
+            <p className="text-[11px] font-mono text-neutral-400 hidden sm:block">
+              Real-Time AI Decision Intelligence for Preventing Traffic Gridlock
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3 text-xs font-mono">
+          <div className="hidden md:flex items-center space-x-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>STATEWIDE TAMIL NADU CORRIDORS ACTIVE</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Predict traffic failure <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-500">
-              before the network fails.
-            </span>
+          <button
+            type="button"
+            onClick={() => handleSelectRole('ADMIN')}
+            className="px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-rose-300 text-xs font-bold transition-colors"
+          >
+            Operator Login
+          </button>
+        </div>
+      </header>
+
+      {/* Main Portal Screen */}
+      <main className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full py-8 z-10">
+        {/* Core Header */}
+        <div className="text-center space-y-3 mb-8 max-w-3xl mx-auto">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-800/80 text-cyan-300 text-xs font-mono font-semibold">
+            <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+            <span>INTERVENTION-CONDITIONED TRAFFIC CASCADE FORECASTING</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight font-mono">
+            SELECT APPLICATION ENVIRONMENT
           </h1>
 
-          <p className="text-lg sm:text-xl text-neutral-300 max-w-3xl mx-auto font-normal leading-relaxed">
-            Real-Time AI Decision Intelligence for Preventing Traffic Gridlock.
-            Conditioned probabilistic forecasting that detects spillbacks minutes before queue onset, simulates counterfactual interventions, and protects public commuters.
-          </p>
-
-          <div className="text-xs font-mono text-neutral-400 max-w-2xl mx-auto pt-1 pb-3">
-            Research: <span className="text-neutral-200">Intervention-Conditioned Probabilistic Traffic Cascade Forecasting</span> · SUMO Digital Twin · Graph Spatiotemporal Transformers
-          </div>
-
-          {/* Direct Role CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <button
-              id="cta-admin-login"
-              onClick={() => handleSelectRole('ADMIN')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-lg bg-gradient-to-r from-rose-700 to-red-800 hover:from-rose-600 hover:to-red-700 text-white font-semibold text-sm shadow-lg shadow-rose-950/50 flex items-center justify-center space-x-2 transition-all border border-rose-600/40"
-            >
-              <ShieldAlert className="w-4 h-4" />
-              <span>AURA COMMAND (TRAFFIC CONTROL)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              id="cta-citizen-login"
-              onClick={() => handleSelectRole('USER')}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-950/50 flex items-center justify-center space-x-2 transition-all border border-cyan-500/40"
-            >
-              <Compass className="w-4 h-4" />
-              <span>AURA CITIZEN (PUBLIC MOBILITY)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              id="cta-explore-demo"
-              onClick={onExploreDemo}
-              className="w-full sm:w-auto px-5 py-3.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-200 font-semibold text-sm border border-neutral-750 flex items-center justify-center space-x-2 transition-all"
-            >
-              <Activity className="w-4 h-4 text-cyan-400" />
-              <span>EXPLORE DEMO CORRIDOR</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Two Applications Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            One Unified Intelligence Engine. Two Specialized Experiences.
-          </h2>
-          <p className="text-neutral-400 text-sm mt-2 max-w-2xl mx-auto">
-            Authorized operators intervene to flush network bottlenecks; citizens navigate with foresight, avoiding cascading risk corridors before congestion strikes.
+          <p className="text-sm sm:text-base text-neutral-300 font-normal leading-relaxed">
+            Choose your interface to enter live corridor intelligence. AURA-TWIN reconstructs partially observed traffic states, predicts upstream spillbacks, and evaluates counterfactual interventions.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Card 1: AURA COMMAND */}
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 sm:p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Two Application Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* AURA COMMAND (Traffic Authority / Operator System) */}
+          <div
+            id="portal-card-command"
+            className="rounded-2xl border border-rose-900/60 bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 p-6 sm:p-7 shadow-2xl flex flex-col justify-between relative group hover:border-rose-700/80 transition-all duration-300"
+          >
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2.5 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 shadow-inner">
                   <ShieldAlert className="w-6 h-6" />
                 </div>
-                <div>
-                  <div className="text-xs font-mono text-rose-400 uppercase tracking-wide">ROLE 1 // RESTRICTED ACCESS</div>
-                  <h3 className="text-xl font-bold text-white">AURA COMMAND</h3>
+                <div className="text-right">
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-rose-950 text-rose-300 border border-rose-800">
+                    OPERATOR RESTRICTED
+                  </span>
+                  <div className="text-[10px] font-mono text-neutral-400 mt-1">Demo: admin / 12345678</div>
                 </div>
               </div>
 
-              <p className="text-neutral-300 text-sm leading-relaxed">
-                Mission-critical control room interface for municipal traffic authorities and road corridor operations centers.
+              <div>
+                <h2 className="text-2xl font-black text-white font-mono tracking-tight flex items-center space-x-2">
+                  <span>AURA COMMAND</span>
+                </h2>
+                <p className="text-xs text-rose-300/90 font-mono mt-0.5">
+                  Statewide Traffic Authority & Control Room
+                </p>
+              </div>
+
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Full-scale operations system for traffic engineers and emergency dispatchers. Reconstruct traffic state, forecast shockwaves, test What-If signal/diversion interventions in real time, and deploy emergency green waves.
               </p>
 
-              <div className="space-y-2 pt-2 text-xs text-neutral-300">
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span><strong>Spillback Hazard Forecasting:</strong> Predicts breakdown probabilities at critical bottlenecks (e.g. J7 Plaza Apex) 3–15 minutes ahead.</span>
+              {/* Feature Chips */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300 pt-2">
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <GitBranch className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <span className="truncate">Cascade Explorer</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span><strong>Point Process Cascade Explorer:</strong> Traces propagation DAGs from root incidents to downstream blockers.</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <Sliders className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <span className="truncate">What-If Decision Lab</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span><strong>What-If Decision Center:</strong> Evaluates counterfactual interventions (Baseline vs. Signal Extension vs. Diversion vs. Combined).</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <Cpu className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <span className="truncate">SUMO Digital Twin</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span><strong>Human-in-the-Loop Safeguards:</strong> Mandates explicit operator ACCEPT / MODIFY / REJECT before applying mitigation policies.</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <UserCheck className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <span className="truncate">Human-in-the-Loop</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-neutral-800/80 mt-6 flex items-center justify-between">
-              <div className="text-[11px] font-mono text-neutral-400">
-                Demo Auth: <span className="text-neutral-200 font-semibold">admin / 12345678</span>
-              </div>
+            {/* Launch Button */}
+            <div className="pt-6">
               <button
+                type="button"
+                id="enter-command-btn"
                 onClick={() => handleSelectRole('ADMIN')}
-                className="px-4 py-2 rounded-md bg-rose-900/60 hover:bg-rose-800/80 text-rose-200 border border-rose-700/60 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-rose-700 via-rose-600 to-red-700 hover:from-rose-600 hover:to-red-600 text-white font-mono font-bold text-sm flex items-center justify-center space-x-2 shadow-xl shadow-rose-950/50 transition-all border border-rose-500/50 cursor-pointer"
               >
-                <span>Launch Command</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>ENTER AURA COMMAND</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
 
-          {/* Card 2: AURA CITIZEN */}
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 sm:p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+          {/* AURA CITIZEN (Public / Driver System) */}
+          <div
+            id="portal-card-citizen"
+            className="rounded-2xl border border-cyan-900/60 bg-gradient-to-b from-neutral-900 via-neutral-900 to-neutral-950 p-6 sm:p-7 shadow-2xl flex flex-col justify-between relative group hover:border-cyan-700/80 transition-all duration-300"
+          >
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2.5 rounded-lg bg-cyan-950/80 border border-cyan-800 text-cyan-300">
+              <div className="flex items-center justify-between">
+                <div className="p-3 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-300 shadow-inner">
                   <Compass className="w-6 h-6" />
                 </div>
-                <div>
-                  <div className="text-xs font-mono text-cyan-400 uppercase tracking-wide">ROLE 2 // PUBLIC MOBILITY</div>
-                  <h3 className="text-xl font-bold text-white">AURA CITIZEN</h3>
+                <div className="text-right">
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    PUBLIC ACCESS
+                  </span>
+                  <div className="text-[10px] font-mono text-emerald-400 mt-1">● No Login Required</div>
                 </div>
               </div>
 
-              <p className="text-neutral-300 text-sm leading-relaxed">
-                Driver and commuter web navigation application providing future-risk-aware route selection and predicted disruption warnings.
+              <div>
+                <h2 className="text-2xl font-black text-white font-mono tracking-tight flex items-center space-x-2">
+                  <span>AURA CITIZEN</span>
+                </h2>
+                <p className="text-xs text-cyan-300/90 font-mono mt-0.5">
+                  Public Driver Navigation & Future-Risk Protection
+                </p>
+              </div>
+
+              <p className="text-xs text-neutral-300 leading-relaxed">
+                Smart commuter navigator that evaluates both current travel time and future cascade risk along alternative paths. Explicit origin-destination routing prevents drivers from getting trapped in developing gridlocks.
               </p>
 
-              <div className="space-y-2 pt-2 text-xs text-neutral-300">
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span><strong>Gridlock Risk Metric:</strong> Calibrated probability that severe network deterioration will impact a route during travel.</span>
+              {/* Feature Chips */}
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-300 pt-2">
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="truncate">Visual Arrival ETA</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span><strong>Trade-off Aware Routing:</strong> Transparent comparison of fastest route vs. lower-future-risk alternatives with clear trade-offs.</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <AlertTriangle className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="truncate">Downstream Spillbacks</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span><strong>Preemptive Disruption Alerts:</strong> Advance warnings for upcoming bottleneck cascades before drivers enter queues.</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <Activity className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="truncate">Risk Horizon Timing</span>
                 </div>
-                <div className="flex items-start space-x-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                  <span><strong>Emergency Corridor Clearances:</strong> Live notifications when priority emergency corridors (e.g. Hospital green waves) are active.</span>
+                <div className="flex items-center space-x-1.5 p-2 rounded-lg bg-neutral-950/80 border border-neutral-800">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                  <span className="truncate">Smart Reroutes</span>
                 </div>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-neutral-800/80 mt-6 flex items-center justify-between">
-              <div className="text-[11px] font-mono text-neutral-400">
-                Public Access: <span className="text-neutral-200 font-semibold">citizen / user123</span>
-              </div>
+            {/* Launch Button */}
+            <div className="pt-6">
               <button
+                type="button"
+                id="enter-citizen-btn"
                 onClick={() => handleSelectRole('USER')}
-                className="px-4 py-2 rounded-md bg-cyan-950/80 hover:bg-cyan-900 text-cyan-200 border border-cyan-800/70 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-bold text-sm flex items-center justify-center space-x-2 shadow-xl shadow-cyan-950/50 transition-all border border-cyan-500/50 cursor-pointer"
               >
-                <span>Launch Citizen</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>ENTER AURA CITIZEN</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Decision Intelligence Flow */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full border-t border-neutral-850">
-        <div className="text-center mb-8">
-          <div className="text-xs font-mono text-cyan-400 uppercase tracking-wider">System Architecture</div>
-          <h2 className="text-2xl font-bold text-white mt-1">The 9-Stage Decision Intelligence Loop</h2>
-          <p className="text-neutral-400 text-xs max-w-xl mx-auto mt-1">
-            How AURA-TWIN transitions from raw telemetry to intervention-conditioned counterfactual outcomes.
-          </p>
+        {/* Data Provenance & Telemetry Integrity Strip */}
+        <div className="mt-8 p-3.5 rounded-xl bg-neutral-900/80 border border-neutral-800 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-neutral-400">
+          <div className="flex items-center space-x-2">
+            <span className="text-neutral-200 font-bold">DATA INTEGRITY STANDARDS:</span>
+            <span className="text-neutral-500">Every metric carries strict provenance labeling:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 text-[10px]">
+              OBSERVED (API Feed)
+            </span>
+            <span className="px-2 py-0.5 rounded bg-amber-950 border border-amber-800 text-amber-300 text-[10px]">
+              ESTIMATED (Physical Kinematics)
+            </span>
+            <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-300 text-[10px]">
+              PREDICTED (Graph Transformer)
+            </span>
+            <span className="px-2 py-0.5 rounded bg-purple-950 border border-purple-800 text-purple-300 text-[10px]">
+              SIMULATED (SUMO Digital Twin)
+            </span>
+          </div>
         </div>
+      </main>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-2 font-mono text-center">
-          {[
-            { step: '01', title: 'OBSERVE', desc: 'TomTom & Sensors' },
-            { step: '02', title: 'RECONSTRUCT', desc: 'Flow & Density' },
-            { step: '03', title: 'PREDICT', desc: 'Graph Transformer' },
-            { step: '04', title: 'DETECT', desc: 'Hazard Threshold' },
-            { step: '05', title: 'PROPAGATE', desc: 'Cascade DAG' },
-            { step: '06', title: 'SIMULATE', desc: 'SUMO Twin Sandbox' },
-            { step: '07', title: 'COMPARE', desc: 'Baseline vs A/B' },
-            { step: '08', title: 'DECIDE', desc: 'Human Approval' },
-            { step: '09', title: 'MONITOR', desc: 'Outcome Validation' },
-          ].map((item, index) => (
-            <div key={item.step} className="p-3 rounded-lg bg-neutral-900/50 border border-neutral-800 flex flex-col justify-between">
-              <div className="text-[10px] text-cyan-400 font-bold">{item.step}</div>
-              <div className="text-xs font-bold text-neutral-100 my-1">{item.title}</div>
-              <div className="text-[10px] text-neutral-400">{item.desc}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Trust & Scientific Honesty Statement */}
-      <footer className="mt-auto border-t border-neutral-850 py-8 px-4 text-center text-xs text-neutral-400 space-y-2">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] font-mono">
-          <span className="flex items-center space-x-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>DATA PROVENANCE: OBSERVED vs. ESTIMATED vs. PREDICTED vs. SIMULATED</span>
-          </span>
+      {/* Portal Footer */}
+      <footer className="px-6 py-4 border-t border-neutral-900 text-center text-xs font-mono text-neutral-500 flex flex-col sm:flex-row justify-between items-center z-10 gap-2">
+        <div>AURA-TWIN Mobility Research & Deployment Architecture · v3.4</div>
+        <div className="flex items-center space-x-3">
+          <span>Tamil Nadu Corridor Graph</span>
           <span>·</span>
-          <span>SUMO MICRO-SIMULATION RUNNER</span>
+          <span>TraCI Interventions</span>
           <span>·</span>
-          <span>GEMINI EXPLAINABILITY COPILOT</span>
+          <span>Point Process Hazards</span>
         </div>
-        <p className="max-w-2xl mx-auto text-neutral-500 text-[11px]">
-          AURA-TWIN enforces strict technical transparency. Predictions are presented with calibrated uncertainty intervals.
-          Simulations are explicitly differentiated from live sensor observations. Operational interventions require verified human authorization.
-        </p>
       </footer>
     </div>
   );
